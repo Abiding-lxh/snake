@@ -25,12 +25,14 @@ SECRET_KEY = 'django-insecure-$!wjt1tb^%i87ei3q@kt!zfquzq5c#=raxeom^-z*_catos00$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["8.153.195.132"]
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
+    'game.apps.GameConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -38,8 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
-
+CORS_ALLOW_ALL_ORIGINS = True 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
