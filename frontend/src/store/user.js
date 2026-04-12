@@ -7,6 +7,7 @@ export default {
     photo:"",
     token:"",
     is_login:false,
+    pulling_info:true,
   },
   getters: {
   },
@@ -21,11 +22,14 @@ export default {
       state.token=token;
     },
     logout(state){
-      state.id="",
-      state.username="",
-      state.photo="",
-      state.token="",
-      state.is_login=false
+      state.id="";
+      state.username="";
+      state.photo="";
+      state.token="";
+      state.is_login=false;
+    },
+    updatePullingInfo(state,pulling_info){
+      state.pulling_info=pulling_info;
     }
   },
   actions: {
@@ -38,6 +42,7 @@ export default {
           password:data.password
         },
         success(resp){
+          localStorage.setItem("jwt_token",resp.access)
           context.commit("updateToken",resp.access)
           data.success(resp);
         },
@@ -59,17 +64,18 @@ export default {
               ...resp,
               is_login:true
             });
-            data.success(resp);
+            data.success();
           }else{
-            data.error(resp);
+            data.error();
           }
         },
-        error(resp){
-          data.error(resp);
+        error(){
+          data.error();
         }
       })
     },
     logout(context){
+      localStorage.removeItem("jwt_token")
       context.commit("logout")
     }
   },
