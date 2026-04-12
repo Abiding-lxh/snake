@@ -5,6 +5,9 @@ import RankListView from '../views/RankListView'
 import UserBotView from '../views/UserBotView'
 import NotFound from '../views/NotFound'
 
+import LoginView from '../views/LoginView'
+import RegisterView from '../views/RegisterView'
+
 const routes = [
   {
     path:'/',
@@ -26,6 +29,16 @@ const routes = [
     path:"/ranklist/",
     name:"ranklist_view",
     component:RankListView,
+  },
+  {
+    path:"/user/login/",
+    name:"user_login_view",
+    component:LoginView
+  },
+  {
+    path:"/user/register",
+    name:"user_register_view",
+    component:RegisterView
   },
   {
     path:"/user/bot/",

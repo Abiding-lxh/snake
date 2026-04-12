@@ -11,6 +11,7 @@ class InfoView(APIView):
 		player=Player.objects.get(user=user)
 		return Response({
 			'result':"success",
+			'id':user.id,
 			'username':user.username,
 			'photo':player.photo,
 			})
