@@ -5,12 +5,16 @@
 </template>
 
 <script type="text/javascript">
-	import ContentField from '../components/ContentField'
-	export default{
-		components:{
-			ContentField
-		}
+import ContentField from '../components/ContentField'
+
+export default{
+	components:{
+		ContentField
+	},
+	setup(){
+		
 	}
+}
 </script>
 
 <style scoped>
