@@ -1,15 +1,58 @@
-
+from game.consumers.Player import Player
 import random
 
-class Game:
+from threading import Thread
+from threading import Lock
+from time import sleep
+
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+from django.core.cache import cache
+from game.models.record import Record
+
+class Game(Thread):
 	dx=[-1,0,1,0]
 	dy=[0,1,0,-1]
 
-	def __init__(self,rows,cols,inner_walls_count):
+	room_map={}
+	room_lock=Lock()
+
+	@classmethod
+	def create_or_get(cls,room_name):
+		with cls.room_lock:
+			if room_name in cls.room_map:
+				return cls.room_map[room_name]
+			game=cls(13,14,20,room_name)
+			cls.room_map[room_name]=game
+			game.createMap()
+			game.start()
+			return game
+
+	@classmethod
+	def del_game(cls,room_name):
+		with cls.room_lock:
+			if room_name in cls.room_map:
+				del cls.room_map[room_name]
+
+	def __init__(self,rows,cols,inner_walls_count,room_name):
+		super().__init__()
 		self.rows=rows
 		self.cols=cols
 		self.inner_walls_count=inner_walls_count
+		self.room_name=room_name
 		self.g=[[0 for j in range(cols)] for i in range(rows)]
+
+		players=cache.get(self.room_name)
+		self.playerA=Player(players[0]['id'],rows-2,1,[])
+		self.playerB=Player(players[1]['id'],1,cols-2,[])
+
+		self.nextStepA=None
+		self.nextStepB=None
+		self.lock=Lock()
+
+		self.status="playing"	#playing->finished
+		self.loser=""	#all:平局	A:A输	B:B输
 
 	def check_connectivity(self,sx,sy,tx,ty):
 		if sx==tx and sy==ty:
@@ -45,3 +88,130 @@ class Game:
 		for i in range(1000):
 			if self.draw():
 				break
+
+
+	def setNextStepA(self,nextStepA):
+		self.lock.acquire()
+		try:
+			self.nextStepA=nextStepA
+		finally:
+			self.lock.release()
+
+	def setNextStepB(self,nextStepB):
+		self.lock.acquire()
+		try:
+			self.nextStepB=nextStepB
+		finally:
+			self.lock.release()
+
+	def nextStep(self):
+		sleep(0.2)
+
+		for i in range(50):
+			sleep(0.1)
+			self.lock.acquire()
+			try:
+				if self.nextStepA!=None and self.nextStepB!=None:
+					self.playerA.steps.append(self.nextStepA)
+					self.playerB.steps.append(self.nextStepB)
+					return True
+			finally:
+				self.lock.release()
+		return False
+
+	def check_valid(self,cellsA,cellsB):
+		n=len(cellsA)
+		cell=cellsA[n-1]
+		if self.g[cell.x][cell.y]:
+			return False
+		for i in range(n-1):
+			if cellsA[i].x==cell.x and cellsA[i].y==cell.y:
+				return False
+		for i in range(n-1):
+			if cellsB[i].x==cell.x and cellsB[i].y==cell.y:
+				return False
+		return True
+
+	def judge(self):
+		cellsA=self.playerA.getCells()
+		cellsB=self.playerB.getCells()
+		validA=self.check_valid(cellsA,cellsB)
+		validB=self.check_valid(cellsB,cellsA)
+
+		if not validA or not validB:
+			self.status="finished"
+			if not validA and not validB:
+				self.loser="all"
+			elif not validA:
+				self.loser="A"
+			else:
+				self.loser="B"
+
+
+	def sendAllMessage(self,message):
+		channel_layer=get_channel_layer()
+		message['type']="group_send_event"
+		async_to_sync(channel_layer.group_send)(
+			self.room_name,message)
+
+	def sendMove(self):
+		self.lock.acquire()
+		try:
+			resp={
+				'event':"move",
+				'a_direction':self.nextStepA,
+				'b_direction':self.nextStepB
+			}
+			self.nextStepA=self.nextStepB=None
+			self.sendAllMessage(resp)
+		finally:
+			self.lock.release()
+
+	def saveToDatabase(self):
+		Record.objects.create(
+			a_id=self.playerA.id,
+			a_sx=self.playerA.sx,
+			a_sy=self.playerA.sy,
+			b_id=self.playerB.id,
+			b_sx=self.playerB.sx,
+			b_sy=self.playerB.sy,
+			a_steps=self.playerA.steps,
+			b_steps=self.playerB.steps,
+			gamemap=self.g,
+			loser=self.loser
+			)
+	def sendResult(self):
+		resp={
+			'event':"result",
+			'loser':self.loser,
+		}
+		self.saveToDatabase()
+		Game.del_game(self.room_name)
+		self.sendAllMessage(resp)
+
+	def run(self):
+		for i in range(1000):
+			if self.nextStep():
+				self.judge()
+				if self.status=="playing":
+					self.sendMove()
+				else:
+					self.sendResult()
+					break
+			else:
+				self.status="finished"
+				self.lock.acquire()
+				try:
+					if self.nextStepA==None and self.nextStepB==None:
+						self.loser="all"
+					elif self.nextStepA==None:
+						self.loser="A"
+					else:
+						self.loser="B"
+				finally:
+					self.lock.release()
+				self.sendResult();
+				break
+
+
+

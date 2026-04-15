@@ -2,7 +2,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from game.models.player import Player
-
 class InfoView(APIView):
 	permission_classes=([IsAuthenticated])
 
