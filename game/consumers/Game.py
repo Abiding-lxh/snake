@@ -19,11 +19,11 @@ class Game(Thread):
 	room_lock=Lock()
 
 	@classmethod
-	def create_or_get(cls,room_name):
+	def create_or_get(cls,idA,idB,room_name):
 		with cls.room_lock:
 			if room_name in cls.room_map:
 				return cls.room_map[room_name]
-			game=cls(13,14,20,room_name)
+			game=cls(13,14,20,idA,idB,room_name)
 			cls.room_map[room_name]=game
 			game.createMap()
 			game.start()
@@ -35,7 +35,7 @@ class Game(Thread):
 			if room_name in cls.room_map:
 				del cls.room_map[room_name]
 
-	def __init__(self,rows,cols,inner_walls_count,room_name):
+	def __init__(self,rows,cols,inner_walls_count,idA,idB,room_name):
 		super().__init__()
 		self.rows=rows
 		self.cols=cols
@@ -43,9 +43,8 @@ class Game(Thread):
 		self.room_name=room_name
 		self.g=[[0 for j in range(cols)] for i in range(rows)]
 
-		players=cache.get(self.room_name)
-		self.playerA=Player(players[0]['id'],rows-2,1,[])
-		self.playerB=Player(players[1]['id'],1,cols-2,[])
+		self.playerA=Player(idA,rows-2,1,[])
+		self.playerB=Player(idB,1,cols-2,[])
 
 		self.nextStepA=None
 		self.nextStepB=None
