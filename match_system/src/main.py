@@ -36,13 +36,16 @@ class Pool:
 		self.cv=Condition(self.lock)
 
 	def add_player(self,player):
-		with self.lock:
+		with self.cv:
 			self.players.append(player)
+			if len(self.players)>=2:
+				self.cv.notify()
 	def remove_player(self,player):
-		with self.lock:
-			for i in range(len(self.players)):
-				if self.players[i].id==player.id:
+		with self.cv:
+			for i in range(len(self.players)-1, -1, -1):
+				if self.players[i].id == player.id:
 					del self.players[i]
+					break
 
 	def check_match(self,a,b):
 		dt=abs(a.score-b.score)
@@ -103,11 +106,12 @@ class MatchHandler:
 	def add_player(self,score,id,botId,channel_name):
 		player=Player(score,id,botId,channel_name)
 		queue.put((player,"add"))
-		print(id,score,channel_name,"add")
+		print(id,botId,score,"thrift add")
 		return 0
 	def remove_player(self,score,id,botId,channel_name):
 		player=Player(score,id,botId,channel_name)
 		queue.put((player,"remove"))
+		print(id,botId,score,"thrift remove")
 		return 0
 
 def consumer_thread():
@@ -117,14 +121,21 @@ def consumer_thread():
 		print(str(player),option,"consumer_thread")
 		if option=="add":
 			pool.add_player(player)
+
 		elif option=="remove":
 			pool.remove_player(player)
 
 def match_thread():
 	print("Start Match")
 	while True:
-		pool.match()
-		sleep(1)
+		with pool.cv:
+			while len(pool.players)<2:
+				pool.cv.wait()
+			print(pool.players)
+			pool.match()
+			print(pool.players)
+			sleep(1)
+		print("match loop")
 
 if __name__ == '__main__':
 	handler = MatchHandler()

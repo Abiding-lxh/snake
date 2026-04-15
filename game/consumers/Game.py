@@ -1,16 +1,21 @@
 from game.consumers.Player import Player
 import random
+import json
 
 from threading import Thread
 from threading import Lock
 from time import sleep
+from django.core.cache import cache
+from game.models.record import Record
 
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
-from django.core.cache import cache
-from game.models.record import Record
-
+from thrift.transport import TSocket
+from thrift.transport import TTransport
+from thrift.protocol import TBinaryProtocol
+from thrift.server import TServer
+from bot_runing_system.src.bot_run_server.bot_run_service import BotRun
 class Game(Thread):
 	dx=[-1,0,1,0]
 	dy=[0,1,0,-1]
@@ -19,11 +24,11 @@ class Game(Thread):
 	room_lock=Lock()
 
 	@classmethod
-	def create_or_get(cls,idA,idB,room_name):
+	def create_or_get(cls,idA,botA,idB,botB,room_name):
 		with cls.room_lock:
 			if room_name in cls.room_map:
 				return cls.room_map[room_name]
-			game=cls(13,14,20,idA,idB,room_name)
+			game=cls(13,14,20,idA,botA,idB,botB,room_name)
 			cls.room_map[room_name]=game
 			game.createMap()
 			game.start()
@@ -35,7 +40,7 @@ class Game(Thread):
 			if room_name in cls.room_map:
 				del cls.room_map[room_name]
 
-	def __init__(self,rows,cols,inner_walls_count,idA,idB,room_name):
+	def __init__(self,rows,cols,inner_walls_count,idA,botA,idB,botB,room_name):
 		super().__init__()
 		self.rows=rows
 		self.cols=cols
@@ -43,8 +48,21 @@ class Game(Thread):
 		self.room_name=room_name
 		self.g=[[0 for j in range(cols)] for i in range(rows)]
 
-		self.playerA=Player(idA,rows-2,1,[])
-		self.playerB=Player(idB,1,cols-2,[])
+		self.botA=botA
+		self.botB=botB
+		self.botIdA=-1
+		self.botIdB=-1
+		self.botCodeA=""
+		self.botCodeB=""
+		if botA!=None:
+			self.botIdA=botA.id
+			self.botCodeA=botA.content
+		if botB!=None:
+			self.botIdB=botB.id
+			self.botCodeB=botB.content
+
+		self.playerA=Player(idA,rows-2,1,self.botIdA,self.botCodeA,[])
+		self.playerB=Player(idB,1,cols-2,self.botIdB,self.botCodeB,[])
 
 		self.nextStepA=None
 		self.nextStepB=None
@@ -102,10 +120,45 @@ class Game(Thread):
 			self.nextStepB=nextStepB
 		finally:
 			self.lock.release()
+	def getInput(self,player): #编码当前对局状态
+		if player.id==self.playerA.id:
+			me=self.playerA
+			you=self.playerB
+		else:
+			me=self.playerB
+			you=self.playerA
+		return json.dumps({
+			'map':self.g,
+			'me_sx':me.sx,
+			'me_sy':me.sy,
+			'me_steps':me.steps,
+			'you_sx':you.sx,
+			'you_sy':you.steps,
+			})
+
+	def sendBotCode(self,player):
+		if player.botId==-1:
+			return
+		# Make socket
+		transport = TSocket.TSocket('127.0.0.1', 9091)
+		# Buffering is critical. Raw sockets are very slow
+		transport = TTransport.TBufferedTransport(transport)
+		# Wrap in a protocol
+		protocol = TBinaryProtocol.TBinaryProtocol(transport)
+		# Create a client to use the protocol encoder
+		client = BotRun.Client(protocol)
+		# Connect!
+		transport.open()
+
+		client.add_bot(player.id,player.botId,player.botCode,self.getInput(player),player.channel_name)
+		# Close!
+		transport.close()
 
 	def nextStep(self):
 		sleep(0.2)
-
+		self.sendBotCode(self.playerA)
+		self.sendBotCode(self.playerB)
+		print("test 测试有没有")
 		for i in range(50):
 			sleep(0.1)
 			self.lock.acquire()

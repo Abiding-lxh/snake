@@ -3,12 +3,15 @@ from game.consumers.Cell import Cell
 
 class Player:
 
-	def __init__(self,id=None,sx=None,sy=None,steps=None):
+	def __init__(self,id,sx,sy,botId,botCode,steps):
 
 		self.id=id
+		self.botId=botId
+		self.botCode=botCode
 		self.sx=sx
 		self.sy=sy
 		self.steps=steps if steps is not None else []
+		self.channel_name=""
 
 	def check_tail_increasing(self,step):
 		if step<=10:

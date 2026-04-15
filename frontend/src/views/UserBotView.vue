@@ -110,9 +110,14 @@ import $ from 'jquery'
 import { useStore } from 'vuex'
 import { ref,reactive } from 'vue'
 import { Modal } from 'bootstrap/dist/js/bootstrap'
+// import { VAceEditor } from 'vue3-ace-editor'
+// import ace from 'ace-builds'
 
 export default{
     setup(){
+    //     ace.config.set(
+    // "basePath", 
+    // "https://cdn.jsdelivr.net/npm/ace-builds@" + require('ace-builds').version + "/src-noconflict/")
         const store=useStore()
         let bots=ref([])
         let bot_add=reactive({
