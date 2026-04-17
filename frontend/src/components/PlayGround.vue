@@ -14,9 +14,11 @@
 </script>
 
 <style scoped>
-	div.playground{
-		width: 60vw;
-		height: 70vh;
-		margin: 30px auto;
-	}
+div.playground{
+	width: 80vw;
+	height: 80vh;
+	margin: 30px auto;
+/*	background-color: lightblue;*/
+}
+
 </style>

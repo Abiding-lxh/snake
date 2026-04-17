@@ -17,7 +17,6 @@ from threading import Condition
 
 from asgiref.sync import async_to_sync
 from django.core.cache import cache
-
 from snake.asgi import channel_layer
 # from channels.layers import get_channel_layer
 
@@ -101,7 +100,6 @@ class Pool:
 pool=Pool()
 queue=Queue()
 
-
 class MatchHandler:
 	def add_player(self,score,id,botId,channel_name):
 		player=Player(score,id,botId,channel_name)
@@ -114,14 +112,11 @@ class MatchHandler:
 		print(id,botId,score,"thrift remove")
 		return 0
 
-def consumer_thread():
+def worker_thread():
 	while True:
-		print(queue.qsize(),"consumer_thread")
 		player,option=queue.get()
-		print(str(player),option,"consumer_thread")
 		if option=="add":
 			pool.add_player(player)
-
 		elif option=="remove":
 			pool.remove_player(player)
 
@@ -154,6 +149,6 @@ if __name__ == '__main__':
 
 	print('Starting the server...')
 	Thread(target=match_thread,daemon=True).start()
-	Thread(target=consumer_thread,daemon=True).start()
+	Thread(target=worker_thread,daemon=True).start()
 	server.serve()
 	print('done.')

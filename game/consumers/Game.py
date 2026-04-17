@@ -24,11 +24,11 @@ class Game(Thread):
 	room_lock=Lock()
 
 	@classmethod
-	def create_or_get(cls,idA,botA,idB,botB,room_name):
+	def create_or_get(cls,rows,cols,inner_walls_count,idA,botA,idB,botB,room_name):
 		with cls.room_lock:
 			if room_name in cls.room_map:
 				return cls.room_map[room_name]
-			game=cls(13,14,20,idA,botA,idB,botB,room_name)
+			game=cls(rows,cols,inner_walls_count,idA,botA,idB,botB,room_name)
 			cls.room_map[room_name]=game
 			game.createMap()
 			game.start()
@@ -85,6 +85,7 @@ class Game(Thread):
 		self.g[sx][sy]=0
 		return False
 	def draw(self):
+		self.g=[[0 for j in range(self.cols)] for i in range(self.rows)]
 		for r in range(self.rows):
 			self.g[r][0]=self.g[r][self.cols-1]=1
 		for c in range(self.cols):
@@ -133,7 +134,8 @@ class Game(Thread):
 			'me_sy':me.sy,
 			'me_steps':me.steps,
 			'you_sx':you.sx,
-			'you_sy':you.steps,
+			'you_sy':you.sy,
+			'you_steps':you.steps,
 			})
 
 	def sendBotCode(self,player):
@@ -158,7 +160,6 @@ class Game(Thread):
 		sleep(0.2)
 		self.sendBotCode(self.playerA)
 		self.sendBotCode(self.playerB)
-		print("test 测试有没有")
 		for i in range(50):
 			sleep(0.1)
 			self.lock.acquire()

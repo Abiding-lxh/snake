@@ -1,7 +1,7 @@
 <template>
 	<PlayGround v-if="$store.state.pk.status==='playing'" />
 	<MatchGround v-if="$store.state.pk.status==='matching'" />
-	<ResultBoard v-if="$store.state.pk.loser!=='none'"/>
+	<ResultBoard v-if="$store.state.pk.loser!=='none'&&$store.state.pk.status!=='matching'"/>
 </template>
 
 <script type="text/javascript">
@@ -44,8 +44,9 @@ export default{
 						username:data.username,
 						photo:data.photo
 					});
-					store.commit("updateStatus","playing")
 					store.commit("updateGame",data.game)
+					store.commit("updateStatus","playing")
+					
 				}else if(event==="move"){
 					console.log(data)
 					const game=store.state.pk.gameObject;

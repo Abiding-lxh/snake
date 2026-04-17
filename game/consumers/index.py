@@ -25,7 +25,6 @@ class MultiPlayer(AsyncWebsocketConsumer):
 			return Player.objects.get(user__username=self.user.username)
 		self.player=await database_sync_to_async(Player.objects.get)(user=self.user)
 
-
 	async def disconnect(self, close_code):
 		# Make socket
 		transport = TSocket.TSocket('127.0.0.1', 9090)
@@ -92,14 +91,18 @@ class MultiPlayer(AsyncWebsocketConsumer):
 		elif self.game.playerB.id==self.user.id:
 			if self.game.playerB.botId==-1:
 				self.game.setNextStepB(direction)
+	async def receive_bot_nextstep(self,data):
+		direction=int(data['direction'])
+		if self.game.playerA.id==self.user.id:
+			self.game.setNextStepA(direction)
+		elif self.game.playerB.id==self.user.id:
+			self.game.setNextStepB(direction)
 
-	
 	async def start_game(self,data):
 		self.room_name=data['room_name']
 
 		aId=data['a_id']
 		bId=data['b_id']
-		print(data['a_bot_id'],data['b_bot_id'],"start_game,before create_game")
 		def db_get_bot(bot_id):
 			return Bot.objects.get(id=bot_id)
 		if data['a_bot_id']==-1:
@@ -117,11 +120,7 @@ class MultiPlayer(AsyncWebsocketConsumer):
 			except:
 				botB=None
 
-		print(botA,botB)
-		self.game=Game.create_or_get(aId,botA,bId,botB,self.room_name)
-		with Game.room_lock:
-			print(Game.room_map)
-		print(self.user,self.game)
+		self.game=Game.create_or_get(13,14,20,aId,botA,bId,botB,self.room_name)
 
 		respGame={
 				'a_id':self.game.playerA.id,
@@ -132,7 +131,7 @@ class MultiPlayer(AsyncWebsocketConsumer):
 				'b_sy':self.game.playerB.sy,
 				'map':self.game.g
 			}
-		print(self.user.id,aId,bId,"start_game")
+
 		if self.user.id==aId:
 			self.game.playerA.channel_name=self.channel_name
 			opponent_channel_name=data['b_channel_name']

@@ -26,6 +26,8 @@ class Player:
 		step=0
 
 		res.append(Cell(x,y))
+		print(self.steps,"tttttttttttttt")
+		print(type(self.steps[0]),"innnnnnnnnnnn")
 		for d in self.steps:
 			x+=dx[d]
 			y+=dy[d]
