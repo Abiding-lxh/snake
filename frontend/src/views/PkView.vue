@@ -1,7 +1,7 @@
-<template>
+ <template>
 	<PlayGround v-if="$store.state.pk.status==='playing'" />
 	<MatchGround v-if="$store.state.pk.status==='matching'" />
-	<ResultBoard v-if="$store.state.pk.loser!=='none'&&$store.state.pk.status!=='matching'"/>
+	<ResultBoard v-if="$store.state.pk.loser!=='none'"/>
 </template>
 
 <script type="text/javascript">
@@ -21,6 +21,9 @@ export default{
 		const store=useStore();
 		const SocketUrl="wss://snake.abiding.cn/wss/multiplayer/?token="+store.state.user.token
 		let socket=null;
+
+		store.commit("updateLoser","none")
+		store.commit("updateIsRecord",false)
 		onMounted(()=>{
 			store.commit("updateOpponent",{
 				username:"我的对手",

@@ -7,6 +7,8 @@ from game.views.botAdd import BotAddView
 from game.views.botRemove import BotRemoveView
 from game.views.botUpdate import BotUpdateView
 from game.views.botList import BotListView
+from game.views.getRecord import getRecordView
+from game.views.ranklist import rankListView
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -23,5 +25,7 @@ urlpatterns = [
     path('api/bot/add/',BotAddView.as_view(),name="bot_add"),
     path('api/bot/remove/',BotRemoveView.as_view(),name="bot_remove"),
     path('api/bot/update/',BotUpdateView.as_view(),name="bot_update"),
-    path('api/bot/list/',BotListView.as_view(),name="bot_list")
+    path('api/bot/list/',BotListView.as_view(),name="bot_list"),
+    path('api/getrecord/',getRecordView.as_view(),name="get_record"),
+    path('api/ranklist/',rankListView.as_view(),name="ranklist")
 ]

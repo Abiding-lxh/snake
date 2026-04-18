@@ -1,15 +1,15 @@
 <template>
 	<div class="container">
-		<div class="player-info">
-			<div class="player-a-info">
+		<div class="player-info" >
+			<div class="player-a-info" v-if="!$store.state.record.is_record">
 				玩家A：{{ a_username }}
 			</div>
 		</div>
 		<div ref="parent" class="gamemap">
 			<canvas ref="canvas" tabindex="0"></canvas>
 		</div>
-		<div class="player-info">
-			<div class="player-b-info">
+		<div class="player-info" >
+			<div class="player-b-info" v-if="!$store.state.record.is_record">
 				玩家B:{{ b_username }}
 			</div>
 		</div>

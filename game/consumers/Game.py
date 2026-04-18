@@ -7,6 +7,7 @@ from threading import Lock
 from time import sleep
 from django.core.cache import cache
 from game.models.record import Record
+from game.models import player
 
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -220,7 +221,24 @@ class Game(Thread):
 		finally:
 			self.lock.release()
 
+
 	def saveToDatabase(self):
+		playerA=player.Player.objects.get(id=self.playerA.id)
+		playerB=player.Player.objects.get(id=self.playerB.id)
+		ratingA=playerA.score
+		ratingB=playerB.score
+
+		if self.loser=="A":
+			ratingA-=5
+			ratingB+=5
+		elif self.loser=="B":
+			ratingA+=5
+			ratingB-=5
+		playerA.score=ratingA
+		playerA.save()
+		playerB.score=ratingB
+		playerB.save()
+
 		Record.objects.create(
 			a_id=self.playerA.id,
 			a_sx=self.playerA.sx,

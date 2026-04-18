@@ -47,6 +47,7 @@ div.result-board{
 	position: absolute;
 	top:30vh;
 	left: 35vw;
+	z-index: 3;
 }
 div.result-board-text{
 	text-align: center;
